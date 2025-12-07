@@ -1,0 +1,93 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 18 * * *"
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, webkit]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.project }}
+
+      - name: Run Playwright tests
+        run: npm test -- --project=${{ matrix.project }}
+        continue-on-error: false
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+      - name: Upload test results (JUnit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results-${{ matrix.project }}
+          path: test-results/junit.xml
+          retention-days: 30
+
+  test-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          pattern: playwright-report-*
+          merge-multiple: true
+
+      - name: Generate combined HTML report
+        run: |
+          mkdir -p combined-report
+          # Copy the latest report or combine if multiple exist
+          if [ -d "all-artifacts/playwright-report-chromium" ]; then
+            cp -r all-artifacts/playwright-report-chromium/* combined-report/ || true
+          fi
+          if [ -d "all-artifacts/playwright-report-webkit" ]; then
+            cp -r all-artifacts/playwright-report-webkit/* combined-report/ || true
+          fi
+
+      - name: Upload combined test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-combined-report
+          path: combined-report/
+          retention-days: 30

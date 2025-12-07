@@ -1,0 +1,43 @@
+Additional Test Cases (Not Automated)
+
+1. Edge Cases
+- Invalid status values for pet/order creation
+- Operations on non-existent resources (petId, orderId)
+- Negative or invalid quantity values
+- Invalid enum values for status fields
+
+2. Data Validation
+- Empty or missing required fields
+- Invalid date formats
+- Invalid data types and formats (photoUrls, etc.)
+
+3. Business Logic
+- Order quantity validation against pet availability
+- Order status workflow transitions
+- Pet status updates post-order
+- Concurrent order processing
+
+4. Security Testing
+
+Authentication & Authorization
+- DELETE operations without/invalid/empty/expired API keys (expected 401/403)
+
+Input Validation & Injection
+- SQL/NoSQL injection attempts
+- XSS payloads in text fields
+- Command injection and path traversal
+- XXE injection (if XML supported)
+
+Parameter Tampering
+- Invalid ID formats (negative, oversized, non-numeric, special characters)
+- Injection attempts in ID parameters
+
+Rate Limiting & DoS
+- Rate limit enforcement on POST/DELETE endpoints
+- Large payload and buffer overflow attempts
+- Concurrent request handling
+
+Data Integrity
+- Malformed JSON payloads
+- Mass assignment vulnerabilities
+- Type coercion and input sanitization
